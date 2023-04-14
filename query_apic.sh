@@ -41,43 +41,6 @@ auth_apic() {
 
 }
 
-query_fvTenant() {
-  echo "[?] Querying fvTenant..."
-  curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/fvTenant.json" | jq --raw-output ".imdata[].fvTenant | map(.dn) | @tsv" | cut -d "/" -f 2 
-}
-
-query_fvAp() {
-  echo "[?] Querying fvAp like $1..."
-  if [ $1 != "all" ]; then
-    FILTER="?query-target-filter=wcard(fvAp.dn,\"$1\")"
-  fi
-  curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/fvAp.json$FILTER" | jq --raw-output ".imdata[].fvAp | map(.dn) | @tsv" | cut -d "/" -f 2,3
-}
-
-query_fvAEPg() {
-  echo "[?] Querying fvAEPg like $1..."
-  if [ $1 != "all" ]; then
-    FILTER="?query-target-filter=wcard(fvAEPg.dn,\"$1\")"
-  fi
-  curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/fvAEPg.json$FILTER" | jq --raw-output ".imdata[].fvAEPg | map(.dn) | @tsv" | cut -d "/" -f 2,3,4
-}
-
-query_fvBD() {
-  echo "[?] Querying fvBD like $1..."
-  if [ $1 != "all" ]; then
-    FILTER="?query-target-filter=wcard(fvAEPg.dn,\"$1\")"
-  fi
-  curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/fvBD.json$FILTER" | jq --raw-output ".imdata[].fvBD | map(.dn) | @tsv" | cut -d "/" -f 2,3
-}
-
-query_fvSubnet() {
-  echo "[?] Querying fvSubnet like $1..."
-  if [ $1 != "all" ]; then
-    FILTER="?query-target-filter=wcard(fvSubnet.dn,\"$1\")"
-  fi
-  curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/fvSubnet.json$FILTER" | jq --raw-output ".imdata[].fvSubnet | map(.dn) | @tsv" | cut -d "/" -f 2,3,4,5
-}
-
 query_fvCEp() {
   echo "[?] Querying fvCEp like $1..."
   if [ $1 != "all" ]; then
@@ -88,8 +51,14 @@ query_fvCEp() {
   else
     curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/fvCEp.json$FILTER" | jq --raw-output ".imdata[].fvCEp | map(.dn) | @tsv" | cut -d "/" -f 2,3,4,5
   fi
-  
-  
+}
+
+query() {
+  echo "[?] Querying $1 like $2..."
+  if [ $2 != "all" ]; then
+    FILTER="?query-target-filter=wcard($1.dn,\"$2\")"
+  fi
+  curl -s -b $COOKIE -X GET -k "https://$APIC/api/node/class/$1.json$FILTER" | jq --raw-output ".imdata[].$1 | map(.dn) | @tsv" | cut -d "/" -f 2,3,4,5
 }
 
 tput civis
@@ -105,13 +74,13 @@ fi
 
 DETAILS=${@: -1}
 shift
-while getopts "ta:e:b:s:i:" option; do
+while getopts "t:a:e:b:s:i:" option; do
   case $option in
-    t) query_fvTenant ;;
-    a) query_fvAp $OPTARG ;;
-    e) query_fvAEPg $OPTARG ;;
-    b) query_fvBD $OPTARG ;;
-    s) query_fvSubnet $OPTARG ;;
+    t) query fvTenant $OPTARG;;
+    a) query fvAp $OPTARG ;;
+    e) query fvAEPg $OPTARG ;;
+    b) query fvBD $OPTARG ;;
+    s) query fvSubnet $OPTARG ;;
     i) query_fvCEp $OPTARG ;;
     *) usage ;;
   esac
