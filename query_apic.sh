@@ -32,10 +32,8 @@ trap ctrl_c INT
 
 auth_apic() {
   echo "[i] Logging in $APIC..."
-  echo -n "Username: "
-  read LOGINNAME
-  echo -n "Password: "
-  read -s LOGINPASSWORD
+  read -p "Username: " LOGINNAME
+  read -sp "Password: " LOGINPASSWORD
 
   curl -s -X POST -k https://$1/api/aaaLogin.json -d "{ \"aaaUser\" : { \"attributes\" : { \"name\" : \"$LOGINNAME\", \"pwd\" : \"$LOGINPASSWORD\" } } }" -c $COOKIE > /tmp/output
 
@@ -66,10 +64,10 @@ APIC=$1
 COOKIE=/tmp/cookie.txt
 FILTER=""
 
-if [ "$(find $COOKIE -mmin +59)" != "" ]; then
+if [ "$(find $COOKIE -mmin +59 &> /dev/null)" != "" ]; then
   auth_apic $1
 else
-  grep "APIC-cookie" $COOKIE > /dev/null && echo "[i] Already authenticated..." || auth_apic $1
+  grep "APIC-cookie" $COOKIE &> /dev/null && echo "[i] Already authenticated..." || auth_apic $1
 fi
 
 DETAILS=${@: -1}
